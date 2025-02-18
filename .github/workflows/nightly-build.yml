@@ -1,0 +1,39 @@
+name: Nightly Build
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest .
+
+      - name: Run Tests
+        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest pytest
+
+      - name: Push Image to DockerHub
+        if: success()
+        run: |
+          docker tag ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:$(date +%Y%m%d)
+          docker push ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:$(date +%Y%m%d)
+
+      - name: Notify on Failure
+        if: failure()
+        run: echo "Nightly build failed!" | mail -s "Nightly Build Failed" your-email@example.com
