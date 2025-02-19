@@ -2,7 +2,7 @@ name: Nightly Build
 
 on:
   schedule:
-    - cron: '25 18 * * *'  
+    - cron: '25 18 * * *'
   workflow_dispatch:  
 
 jobs:
@@ -23,7 +23,27 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Start Services with Docker Compose
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_ALGORITHM: ${{ secrets.JWT_ALGORITHM }}
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          MAIL_SERVER: ${{ secrets.MAIL_SERVER }}
+          MAIL_PORT: ${{ secrets.MAIL_PORT }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          DOMAIN: ${{ secrets.DOMAIN }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
         run: docker compose up -d  
+
+      - name: Wait for Database to be Ready
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          until docker exec $(docker ps -q -f name=web) pg_isready -h db -p 5432; do
+            echo "Waiting for database..."
+            sleep 5
+          done
+          echo "Database is ready!"
 
       - name: Run Database Migrations
         run: docker exec $(docker ps -q -f name=web) alembic upgrade head
