@@ -78,3 +78,33 @@ pytest
 
 ## Contributing
 I welcome contributions to improve the documentation! You can contribute [here](https://github.com/jod35/fastapi-beyond-crud-docs).
+
+## Updated Instructions
+
+1. Clone the Repository
+git clone https://github.com/punnam14/fastapi-beyond-CRUD.git
+
+2. Navigate to the project directory:
+cd fastapi-beyond-CRUD/
+
+3. Configure Environment Variables
+Create an .env file from the example:
+cp .env.example .env
+
+4. To run the application:
+docker compose up 
+
+5. API docs: 
+http://localhost:8000/api/v1/docs
+
+6. Example curl command to test the application 
+curl -X 'POST' 'http://localhost:8000/api/v1/auth/signup' \
+-H 'accept: application/json' \
+-H 'Content-Type: application/json' \
+-d '{
+  "email": "user@example.com",
+  "password": "securepassword",
+  "username": "testuser",
+  "first_name": "Test",
+  "last_name": "User"
+}'
