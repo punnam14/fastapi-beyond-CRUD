@@ -31,6 +31,19 @@ jobs:
 
       - name: Close PR if not Conventional
         if: failure()
-        run: gh pr close ${{ github.event.pull_request.number }} -r "Your PR does not follow Conventional Commits!"
+        run: gh pr close ${{ github.event.pull_request.number }} --comment "Your PR does not follow Conventional Commits!"
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+      - name: Send Email Notification on PR Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "PR Rejected - Invalid Commit Message"
+          body: "Your Pull Request #${{ github.event.pull_request.number }} was rejected because it does not follow Conventional Commits."
+          to: ${{ secrets.MAIL_USERNAME }}
+          from: "GitHub Actions <${{ secrets.MAIL_FROM }}>"
