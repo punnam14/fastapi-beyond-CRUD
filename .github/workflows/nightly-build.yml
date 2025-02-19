@@ -2,11 +2,13 @@ name: Nightly Build
 
 on:
   schedule:
-    - cron: '0 0 * * *'  
+    - cron: '25 18 * * *'  
+  workflow_dispatch:  
 
 jobs:
-  build-and-push:
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,20 +22,40 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build Docker Image
+      - name: Start Services with Docker Compose
+        run: docker compose up -d  
+
+      - name: Run Database Migrations
+        run: docker exec $(docker ps -q -f name=web) alembic upgrade head
+
+      - name: Run Tests Inside Docker
+        run: docker exec $(docker ps -q -f name=web) pytest
+        continue-on-error: false  
+
+      - name: Stop Docker Services
+        run: docker compose down  
+
+      - name: Build and Push Docker Image
+        if: success()  
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest .
-
-      - name: Run Tests
-        run: docker run --rm ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest pytest
-
-      - name: Push Image to DockerHub
-        if: success()
-        run: |
           docker tag ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:$(date +%Y%m%d)
           docker push ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/fastapi-beyond-crud:$(date +%Y%m%d)
 
-      - name: Notify on Failure
-        if: failure()
-        run: echo "Nightly build failed!" | mail -s "Nightly Build Failed" your-email@example.com
+  notify-on-failure:
+    needs: build-and-test
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Failure Notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: "Nightly Build Failed!"
+          body: "The nightly build has failed. Check the logs for details."
+          to: ${{ secrets.MAIL_USERNAME }}
+          from: "GitHub Actions <${{ secrets.MAIL_FROM }}>"
