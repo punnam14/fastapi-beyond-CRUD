@@ -27,10 +27,10 @@ jobs:
             build
           requireScope: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
 
       - name: Close PR if not Conventional
         if: failure()
         run: gh pr close ${{ github.event.pull_request.number }} -r "Your PR does not follow Conventional Commits!"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
