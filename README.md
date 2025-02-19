@@ -77,6 +77,4 @@ pytest
 ```
 
 ## Contributing
-I welcome contributions to improve the documentation! You can contribute [here](https://github.com/jod35/fastapi-beyond-crud-docs). scree
-
-Modify the ReadMe
+I welcome contributions to improve the documentation! You can contribute [here](https://github.com/jod35/fastapi-beyond-crud-docs).
