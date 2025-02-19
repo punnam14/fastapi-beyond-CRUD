@@ -11,7 +11,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Enforce Conventional Commits
+      - name: Enforce Conventional Commits on PR Title
         uses: amannn/action-semantic-pull-request@v5
         with:
           types: |
@@ -29,7 +29,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
 
-      - name: Close PR if not Conventional
+      - name: Enforce Conventional Commits on Commit Messages
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: commitlint.config.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+      - name: Close PR if Not Conventional
         if: failure()
         run: gh pr close ${{ github.event.pull_request.number }} --comment "Your PR does not follow Conventional Commits!"
         env:
