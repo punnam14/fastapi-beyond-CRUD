@@ -22,51 +22,48 @@ services:
       - "8000:8000"
 
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
     networks:
       - app-network
 
   db:
     image: postgres:15
-
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: bookly
       POSTGRES_PASSWORD: testpass
-
     ports:
-     - "5432:5432"
-
+      - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+      timeout: 3s
+
   redis:
     image: redis:6
-
     ports:
      - "6379:6379"
-
     networks:
      - app-network
 
   celery:
     build: .
-
     command: celery -A src.celery_tasks.c_app worker --loglevel=INFO
-
     volumes:
       - .:/app
-
     depends_on:
       - redis
-
     environment:
       REDIS_URL: ${REDIS_URL}
-
     networks:
       - app-network
 
